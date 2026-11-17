@@ -1,0 +1,235 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --sanvad-accent: #0f766e;
+    --sanvad-accent-hover: #115e59;
+    --sanvad-accent-light: #f0fdfa;
+    --sanvad-accent-dark-text: #2dd4bf;
+    --sanvad-accent-subtle: rgba(15, 118, 110, 0.12);
+    --sanvad-msg-size: 0.875rem;
+    --sanvad-msg-leading: 1.45;
+  }
+
+  :root[data-accent='indigo'] {
+    --sanvad-accent: #4338ca;
+    --sanvad-accent-hover: #3730a3;
+    --sanvad-accent-light: #eef2ff;
+    --sanvad-accent-dark-text: #818cf8;
+    --sanvad-accent-subtle: rgba(67, 56, 202, 0.12);
+  }
+
+  :root[data-accent='rose'] {
+    --sanvad-accent: #be123c;
+    --sanvad-accent-hover: #9f1239;
+    --sanvad-accent-light: #fff1f2;
+    --sanvad-accent-dark-text: #fb7185;
+    --sanvad-accent-subtle: rgba(190, 18, 60, 0.12);
+  }
+
+  :root[data-accent='emerald'] {
+    --sanvad-accent: #047857;
+    --sanvad-accent-hover: #065f46;
+    --sanvad-accent-light: #ecfdf5;
+    --sanvad-accent-dark-text: #34d399;
+    --sanvad-accent-subtle: rgba(4, 120, 87, 0.12);
+  }
+
+  :root[data-font-size='sm'] {
+    --sanvad-msg-size: 0.8125rem;
+    --sanvad-msg-leading: 1.4;
+  }
+
+  :root[data-font-size='md'] {
+    --sanvad-msg-size: 0.875rem;
+    --sanvad-msg-leading: 1.5;
+  }
+
+  :root[data-font-size='lg'] {
+    --sanvad-msg-size: 1rem;
+    --sanvad-msg-leading: 1.55;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+.sanvad-accent-bg {
+  background-color: var(--sanvad-accent);
+  color: #ffffff;
+}
+
+.sanvad-accent-bg:hover {
+  background-color: var(--sanvad-accent-hover);
+}
+
+.sanvad-accent-text {
+  color: var(--sanvad-accent);
+}
+
+.dark .sanvad-accent-text {
+  color: var(--sanvad-accent-dark-text);
+}
+
+.sanvad-msg-text {
+  font-size: var(--sanvad-msg-size);
+  line-height: var(--sanvad-msg-leading);
+}
+
+/* Subtle decorative geometric chat wallpaper & customizable presets */
+.chat-wallpaper,
+.wallpaper-default {
+  background-color: #f3f6f7;
+  background-image:
+    radial-gradient(circle at 24px 24px, rgba(15, 118, 110, 0.065) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 60px 60px, rgba(14, 165, 233, 0.05) 1.5px, transparent 1.5px),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.025) 25%, transparent 25%);
+  background-size: 72px 72px;
+}
+
+.dark .chat-wallpaper,
+.dark .wallpaper-default {
+  background-color: #0b0f17;
+  background-image:
+    radial-gradient(circle at 24px 24px, rgba(45, 212, 191, 0.065) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 60px 60px, rgba(56, 189, 248, 0.045) 1.5px, transparent 1.5px),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.02) 25%, transparent 25%);
+  background-size: 72px 72px;
+}
+
+.wallpaper-aurora {
+  background-color: #ecfdf5;
+  background-image:
+    radial-gradient(at 15% 20%, rgba(16, 185, 129, 0.16) 0, transparent 50%),
+    radial-gradient(at 85% 75%, rgba(14, 165, 233, 0.16) 0, transparent 52%),
+    radial-gradient(circle at 20px 20px, rgba(15, 118, 110, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 36px 36px;
+}
+
+.dark .wallpaper-aurora {
+  background-color: #071314;
+  background-image:
+    radial-gradient(at 15% 20%, rgba(16, 185, 129, 0.16) 0, transparent 50%),
+    radial-gradient(at 85% 75%, rgba(14, 165, 233, 0.14) 0, transparent 52%),
+    radial-gradient(circle at 20px 20px, rgba(45, 212, 191, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 36px 36px;
+}
+
+.wallpaper-sunset {
+  background-color: #fff7ed;
+  background-image:
+    radial-gradient(at 18% 15%, rgba(251, 146, 60, 0.16) 0, transparent 48%),
+    radial-gradient(at 82% 85%, rgba(244, 63, 94, 0.12) 0, transparent 50%),
+    repeating-linear-gradient(45deg, rgba(234, 88, 12, 0.025) 0 1px, transparent 1px 28px);
+}
+
+.dark .wallpaper-sunset {
+  background-color: #160e10;
+  background-image:
+    radial-gradient(at 18% 15%, rgba(251, 146, 60, 0.12) 0, transparent 48%),
+    radial-gradient(at 82% 85%, rgba(244, 63, 94, 0.12) 0, transparent 50%),
+    repeating-linear-gradient(45deg, rgba(251, 146, 60, 0.03) 0 1px, transparent 1px 28px);
+}
+
+.wallpaper-ocean {
+  background-color: #f0f9ff;
+  background-image:
+    radial-gradient(at 80% 15%, rgba(56, 189, 248, 0.18) 0, transparent 48%),
+    radial-gradient(at 15% 85%, rgba(37, 99, 235, 0.12) 0, transparent 52%),
+    radial-gradient(circle at 14px 14px, rgba(2, 132, 199, 0.06) 1.25px, transparent 1.25px);
+  background-size: 100% 100%, 100% 100%, 28px 28px;
+}
+
+.dark .wallpaper-ocean {
+  background-color: #081220;
+  background-image:
+    radial-gradient(at 80% 15%, rgba(56, 189, 248, 0.14) 0, transparent 48%),
+    radial-gradient(at 15% 85%, rgba(37, 99, 235, 0.14) 0, transparent 52%),
+    radial-gradient(circle at 14px 14px, rgba(56, 189, 248, 0.05) 1.25px, transparent 1.25px);
+  background-size: 100% 100%, 100% 100%, 28px 28px;
+}
+
+.wallpaper-lavender {
+  background-color: #f5f3ff;
+  background-image:
+    radial-gradient(at 20% 25%, rgba(167, 139, 250, 0.18) 0, transparent 50%),
+    radial-gradient(at 85% 80%, rgba(232, 121, 249, 0.12) 0, transparent 50%),
+    linear-gradient(rgba(124, 58, 237, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+}
+
+.dark .wallpaper-lavender {
+  background-color: #110d1e;
+  background-image:
+    radial-gradient(at 20% 25%, rgba(167, 139, 250, 0.14) 0, transparent 50%),
+    radial-gradient(at 85% 80%, rgba(232, 121, 249, 0.1) 0, transparent 50%),
+    linear-gradient(rgba(167, 139, 250, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 139, 250, 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+}
+
+.wallpaper-botanical {
+  background-color: #f2f7f4;
+  background-image:
+    radial-gradient(circle at 0% 50%, rgba(22, 163, 74, 0.08) 9px, transparent 10px),
+    radial-gradient(circle at 100% 50%, rgba(13, 148, 136, 0.07) 9px, transparent 10px);
+  background-size: 52px 52px;
+}
+
+.dark .wallpaper-botanical {
+  background-color: #091410;
+  background-image:
+    radial-gradient(circle at 0% 50%, rgba(34, 197, 94, 0.08) 9px, transparent 10px),
+    radial-gradient(circle at 100% 50%, rgba(20, 184, 166, 0.07) 9px, transparent 10px);
+  background-size: 52px 52px;
+}
+
+.wallpaper-midnight {
+  background-color: #e2e8f0;
+  background-image:
+    radial-gradient(circle at 12px 12px, rgba(51, 65, 85, 0.12) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 36px 36px, rgba(15, 118, 110, 0.1) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.dark .wallpaper-midnight {
+  background-color: #060911;
+  background-image:
+    radial-gradient(circle at 12px 12px, rgba(148, 163, 184, 0.12) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 36px 36px, rgba(45, 212, 191, 0.1) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Custom subtle scrollbars for chat lists and message stream */
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+
+.dark .chat-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.4);
+}

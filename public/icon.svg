@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F766E" />
+      <stop offset="100%" stop-color="#064E3B" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)" />
+  <!-- Upper speech ribbon forming top half of S -->
+  <path
+    d="M352 138H210C156 138 118 176 118 222C118 266 154 294 202 308L252 322"
+    stroke="#FFFFFF"
+    stroke-width="58"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M352 138H210C156 138 118 176 118 222C118 266 154 294 202 308L252 322"
+    stroke="#6EE7B7"
+    stroke-width="14"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Lower speech ribbon forming bottom half of S -->
+  <path
+    d="M260 190L310 204C358 218 394 246 394 290C394 336 356 374 302 374H160"
+    stroke="#FFFFFF"
+    stroke-width="58"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M260 190L310 204C358 218 394 246 394 290C394 336 356 374 302 374H160"
+    stroke="#6EE7B7"
+    stroke-width="14"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Dual speech-tail notches -->
+  <path d="M138 272L116 306L158 292Z" fill="#FFFFFF" />
+  <path d="M374 240L396 206L354 220Z" fill="#FFFFFF" />
+</svg>

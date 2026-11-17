@@ -1,0 +1,6 @@
+{
+  "name": "BaatCheet",
+  "description": "Free real-time personal and group chat app with photo sharing, live polls, delivery ticks, online presence, and installable PWA support.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
