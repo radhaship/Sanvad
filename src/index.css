@@ -233,3 +233,16 @@
 .dark .chat-scroll::-webkit-scrollbar-thumb {
   background-color: rgba(100, 116, 139, 0.4);
 }
+
+/* Prevent externally injected Netlify Deploy Preview / Toolbar widgets from covering the chat composer */
+#__netlify-drawer,
+netlify-drawer,
+[id^="netlify-drawer"],
+[class*="netlify-drawer"],
+[data-netlify-deploy-preview],
+iframe[src*="app.netlify.com/"],
+iframe[title*="Netlify"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

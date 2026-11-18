@@ -9,6 +9,7 @@ import {
   Lock,
   MessageSquare,
   Moon,
+  RotateCw,
   Sun,
   Users,
   X,
@@ -34,7 +35,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [copiedHost, setCopiedHost] = useState(false);
 
-  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+  const currentHost =
+    typeof window !== 'undefined'
+      ? window.location.hostname || window.location.host || window.location.origin
+      : '';
   const isDomainAuthError = Boolean(
     error && (error.includes('not authorized') || error.includes('unauthorized-domain'))
   );
@@ -148,15 +152,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       <span>{copiedHost ? 'Copied' : 'Copy Domain'}</span>
                     </button>
                   </div>
-                  <a
-                    href={`https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/settings`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 text-rose-800 dark:text-rose-200 hover:opacity-80"
-                  >
-                    <span>Open Firebase Authorized Domains</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <a
+                      href={`https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/settings`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 text-rose-800 dark:text-rose-200 hover:opacity-80"
+                    >
+                      <span>Open Firebase Authorized Domains</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => window.location.reload()}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-semibold cursor-pointer"
+                    >
+                      <RotateCw className="w-3 h-3" />
+                      <span>Reload App</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

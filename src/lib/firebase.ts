@@ -87,9 +87,12 @@ export function formatAuthError(error: unknown): string {
     return 'Network error while connecting to Google Sign-In. Please check your connection and try again.';
   }
   if (code === 'auth/unauthorized-domain' || message.includes('auth/unauthorized-domain')) {
-    const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+    const currentHost =
+      typeof window !== 'undefined'
+        ? window.location.hostname || window.location.host || window.location.origin
+        : '';
     return currentHost
-      ? `Domain "${currentHost}" is not authorized in Firebase Authentication yet. Add it under Authentication → Settings → Authorized domains.`
+      ? `Domain "${currentHost}" is not authorized in Firebase Authentication yet. Add "${currentHost}" under Authentication → Settings → Authorized domains, then tap Reload App.`
       : 'This app domain is not authorized in Firebase Authentication. Add this domain under Authentication → Settings → Authorized domains.';
   }
   return message || 'Google Sign-In failed. Please try again.';

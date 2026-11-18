@@ -26,6 +26,7 @@ import {
   Mic,
   MonitorUp,
   Moon,
+  MoreVertical,
   Palette,
   Paperclip,
   Phone,
@@ -281,6 +282,7 @@ export default function App() {
   const e2eePrivateKeyRef = useRef<CryptoKey | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMobileExtras, setShowMobileExtras] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [forwardingMessage, setForwardingMessage] = useState<ChatMessage | null>(null);
   const [infoMessage, setInfoMessage] = useState<ChatMessage | null>(null);
   const [chatPendingDelete, setChatPendingDelete] = useState<Chat | null>(null);
@@ -1124,6 +1126,9 @@ export default function App() {
     setUseFallbackMsgQuery(false);
     setShowChecklistModal(false);
     setShowLeaderboardModal(false);
+    setShowHeaderMenu(false);
+    setShowMobileExtras(false);
+    setShowEmojiPicker(false);
     setOlderMessages([]);
     prevScrollHeightRef.current = null;
     isPrependingOlderRef.current = false;
@@ -3124,13 +3129,14 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="relative flex items-center gap-1 shrink-0">
                 {activeChat.type === 'direct' && activeOtherUid && !isActiveBotChat && (
                   <>
                     <button
                       type="button"
                       disabled={isActiveChatBlocked}
-                      onClick={() =>
+                      onClick={() => {
+                        setShowHeaderMenu(false);
                         setActiveCall({
                           mode: 'outgoing',
                           chatId: activeChat.id,
@@ -3140,8 +3146,8 @@ export default function App() {
                             displayName: activeMeta.title,
                             photoUrl: activeMeta.photoUrl,
                           },
-                        })
-                      }
+                        });
+                      }}
                       className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                       title="Voice Call (P2P)"
                       aria-label="Start voice call"
@@ -3151,7 +3157,8 @@ export default function App() {
                     <button
                       type="button"
                       disabled={isActiveChatBlocked}
-                      onClick={() =>
+                      onClick={() => {
+                        setShowHeaderMenu(false);
                         setActiveCall({
                           mode: 'outgoing',
                           chatId: activeChat.id,
@@ -3161,170 +3168,238 @@ export default function App() {
                             displayName: activeMeta.title,
                             photoUrl: activeMeta.photoUrl,
                           },
-                        })
-                      }
+                        });
+                      }}
                       className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl sanvad-accent-text hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
                       title="Video Call (P2P)"
                       aria-label="Start video call"
                     >
                       <Video className="w-4 h-4" />
                     </button>
-                    <button
-                      type="button"
-                      disabled={isActiveChatBlocked || Boolean(activeScreenShare)}
-                      onClick={() =>
-                        setActiveScreenShare({
-                          mode: 'outgoing',
-                          chatId: activeChat.id,
-                          isGroup: false,
-                          visibleToUids: [currentUser.uid, activeOtherUid],
-                          target: {
-                            uid: activeOtherUid,
-                            displayName: activeMeta.title,
-                            photoUrl: activeMeta.photoUrl,
-                          },
-                        })
-                      }
-                      className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 disabled:opacity-40 cursor-pointer"
-                      title="Share Screen (P2P)"
-                      aria-label="Share screen"
-                    >
-                      <MonitorUp className="w-4 h-4" />
-                    </button>
                   </>
                 )}
-                {activeChat.type === 'group' && (
-                  <>
-                    {liveGroupScreenShares[activeChat.id] &&
-                      liveGroupScreenShares[activeChat.id].callerId !== currentUser.uid && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveScreenShare({
-                              mode: 'incoming',
-                              session: liveGroupScreenShares[activeChat.id],
-                              autoAccept: true,
-                            })
-                          }
-                          className="h-9 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
-                          title={`Watch ${liveGroupScreenShares[activeChat.id].callerName}'s live screen`}
-                        >
-                          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                          <span>Live Screen</span>
-                        </button>
-                      )}
+
+                {activeChat.type === 'group' &&
+                  liveGroupScreenShares[activeChat.id] &&
+                  liveGroupScreenShares[activeChat.id].callerId !== currentUser.uid && (
                     <button
                       type="button"
-                      disabled={Boolean(activeScreenShare)}
-                      onClick={() =>
+                      onClick={() => {
+                        setShowHeaderMenu(false);
                         setActiveScreenShare({
-                          mode: 'outgoing',
-                          chatId: activeChat.id,
-                          isGroup: true,
-                          visibleToUids: activeChat.memberUids,
-                          target: {
-                            uid: 'group',
-                            displayName: activeMeta.title,
-                            photoUrl: activeMeta.photoUrl,
-                          },
-                        })
-                      }
-                      className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 disabled:opacity-40 cursor-pointer"
-                      title="Share Screen in Group (P2P)"
-                      aria-label="Share screen in group"
+                          mode: 'incoming',
+                          session: liveGroupScreenShares[activeChat.id],
+                          autoAccept: true,
+                        });
+                      }}
+                      className="h-9 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      title={`Watch ${liveGroupScreenShares[activeChat.id].callerName}'s live screen`}
                     >
-                      <MonitorUp className="w-4 h-4" />
+                      <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                      <span>Live Screen</span>
                     </button>
-                  </>
-                )}
+                  )}
+
                 <button
                   type="button"
                   onClick={() => {
-                    setInChatSearchOpen((o) => !o);
-                    setInChatSearchQuery('');
-                    setInChatMatchIdx(0);
+                    setShowMobileExtras(false);
+                    setShowEmojiPicker(false);
+                    setShowHeaderMenu((o) => !o);
                   }}
-                  className={`min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl transition-colors cursor-pointer ${
-                    inChatSearchOpen
+                  className={`relative min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl transition-colors cursor-pointer ${
+                    showHeaderMenu
                       ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
-                  title="Search in this chat"
-                  aria-label="Search in this chat"
+                  title="Chat options & tools"
+                  aria-label="Chat options & tools"
+                  aria-expanded={showHeaderMenu}
                 >
-                  <Search className="w-4 h-4" />
+                  <MoreVertical className="w-5 h-5" />
+                  {activeChat.type === 'group' && openChecklistCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full sanvad-accent-bg ring-2 ring-white dark:ring-slate-900" />
+                  )}
                 </button>
-                {!isActiveBotChat && (
-                  <button
-                    type="button"
-                    onClick={() => setShowMeetModal(true)}
-                    className="hidden md:inline-flex min-w-[38px] min-h-[38px] px-2 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 items-center justify-center gap-1.5 cursor-pointer"
-                    title="Start Google Meet call"
-                    aria-label="Start Google Meet call"
-                  >
-                    <Video className="w-4 h-4" />
-                    <span className="hidden lg:inline">Meet</span>
-                  </button>
+
+                {showHeaderMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-30"
+                      onClick={() => setShowHeaderMenu(false)}
+                      aria-hidden="true"
+                    />
+                    <div
+                      role="menu"
+                      aria-label="Chat options"
+                      className="absolute top-full right-0 mt-2 w-60 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 z-40"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowHeaderMenu(false);
+                          setInChatSearchOpen((o) => !o);
+                          setInChatSearchQuery('');
+                          setInChatMatchIdx(0);
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Search className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                        <span className="flex-1">
+                          {inChatSearchOpen ? 'Close Search' : 'Search in Chat'}
+                        </span>
+                      </button>
+
+                      {((activeChat.type === 'direct' && activeOtherUid && !isActiveBotChat) ||
+                        activeChat.type === 'group') && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          disabled={
+                            (activeChat.type === 'direct' && isActiveChatBlocked) ||
+                            Boolean(activeScreenShare)
+                          }
+                          onClick={() => {
+                            setShowHeaderMenu(false);
+                            if (activeChat.type === 'direct' && activeOtherUid) {
+                              setActiveScreenShare({
+                                mode: 'outgoing',
+                                chatId: activeChat.id,
+                                isGroup: false,
+                                visibleToUids: [currentUser.uid, activeOtherUid],
+                                target: {
+                                  uid: activeOtherUid,
+                                  displayName: activeMeta.title,
+                                  photoUrl: activeMeta.photoUrl,
+                                },
+                              });
+                            } else if (activeChat.type === 'group') {
+                              setActiveScreenShare({
+                                mode: 'outgoing',
+                                chatId: activeChat.id,
+                                isGroup: true,
+                                visibleToUids: activeChat.memberUids,
+                                target: {
+                                  uid: 'group',
+                                  displayName: activeMeta.title,
+                                  photoUrl: activeMeta.photoUrl,
+                                },
+                              });
+                            }
+                          }}
+                          className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <MonitorUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="flex-1">Share Screen (P2P)</span>
+                        </button>
+                      )}
+
+                      {!isActiveBotChat && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setShowHeaderMenu(false);
+                            setShowMeetModal(true);
+                          }}
+                          className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <Video className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="flex-1">Google Meet Call</span>
+                        </button>
+                      )}
+
+                      {!isActiveBotChat && (
+                        <>
+                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setShowHeaderMenu(false);
+                              setShowMiniGameModal(true);
+                            }}
+                            className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <Gamepad2 className="w-4 h-4 sanvad-accent-text shrink-0" />
+                            <span className="flex-1">Mini Games</span>
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setShowHeaderMenu(false);
+                              setShowLeaderboardModal(true);
+                            }}
+                            className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                            <span className="flex-1">Game Leaderboard</span>
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setShowHeaderMenu(false);
+                              setShowPollModal(true);
+                            }}
+                            className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <BarChart3 className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                            <span className="flex-1">Create Poll</span>
+                          </button>
+                        </>
+                      )}
+
+                      {activeChat.type === 'group' && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setShowHeaderMenu(false);
+                            setShowChecklistModal(true);
+                          }}
+                          className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <ListChecks className="w-4 h-4 sanvad-accent-text shrink-0" />
+                          <span className="flex-1">Trip Checklist</span>
+                          {openChecklistCount > 0 && (
+                            <span className="min-w-[18px] h-[18px] px-1 rounded-full sanvad-accent-bg text-[10px] font-bold tabular-nums flex items-center justify-center">
+                              {openChecklistCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowHeaderMenu(false);
+                          setShowWallpaperModal(true);
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Palette className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                        <span className="flex-1">Chat Wallpaper</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowHeaderMenu(false);
+                          setShowInfoDrawer(true);
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Info className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                        <span className="flex-1">Chat Info &amp; Settings</span>
+                      </button>
+                    </div>
+                  </>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setShowWallpaperModal(true)}
-                  className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                  title="Change chat wallpaper"
-                  aria-label="Change chat wallpaper"
-                >
-                  <Palette className="w-4 h-4" />
-                </button>
-                {activeChat.type === 'group' && (
-                  <button
-                    type="button"
-                    onClick={() => setShowChecklistModal(true)}
-                    className="relative min-w-[38px] min-h-[38px] px-2 rounded-xl text-xs font-semibold sanvad-accent-text hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center gap-1.5 cursor-pointer"
-                    title="Trip & Hangout Shared Checklist"
-                    aria-label="Open shared group checklist"
-                  >
-                    <ListChecks className="w-4 h-4" />
-                    <span className="hidden lg:inline">Checklist</span>
-                    {openChecklistCount > 0 && (
-                      <span className="min-w-[18px] h-[18px] px-1 rounded-full sanvad-accent-bg text-[10px] font-bold tabular-nums flex items-center justify-center">
-                        {openChecklistCount}
-                      </span>
-                    )}
-                  </button>
-                )}
-                {!isActiveBotChat && (
-                  <button
-                    type="button"
-                    onClick={() => setShowLeaderboardModal(true)}
-                    className="min-w-[38px] min-h-[38px] px-2 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 inline-flex items-center justify-center gap-1.5 cursor-pointer"
-                    title="Game Leaderboard & Rankings"
-                    aria-label="Open game leaderboard"
-                  >
-                    <Trophy className="w-4 h-4" />
-                    <span className="hidden lg:inline">Ranks</span>
-                  </button>
-                )}
-                {!isActiveBotChat && (
-                  <button
-                    type="button"
-                    onClick={() => setShowPollModal(true)}
-                    className="min-w-[38px] min-h-[38px] px-2 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40 inline-flex items-center justify-center gap-1.5 cursor-pointer"
-                    title="Create a poll"
-                    aria-label="Create a poll"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span className="hidden lg:inline">Poll</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setShowInfoDrawer(true)}
-                  className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                  title="Chat info, pin, archive & photos"
-                  aria-label="Chat info, pin, archive & photos"
-                >
-                  <Info className="w-5 h-5" />
-                </button>
               </div>
             </header>
 
@@ -3431,6 +3506,11 @@ export default function App() {
             {/* Message Feed with Custom Wallpaper */}
             <div
               ref={feedScrollRef}
+              onClick={() => {
+                if (showHeaderMenu) setShowHeaderMenu(false);
+                if (showMobileExtras) setShowMobileExtras(false);
+                if (showEmojiPicker) setShowEmojiPicker(false);
+              }}
               onScroll={(e) => {
                 if (e.currentTarget.scrollTop < 60 && hasMoreMessages && !loadingOlderMessages) {
                   handleLoadOlderMessages();
@@ -3673,7 +3753,7 @@ export default function App() {
             ) : (
               <form
                 onSubmit={(e) => void handleSendText(e)}
-                className="relative px-3 sm:px-5 py-2.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-end gap-1.5 sm:gap-2 shrink-0"
+                className="relative px-3 sm:px-5 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-end gap-1.5 sm:gap-2 shrink-0"
               >
                 {!isRecordingVoice && (
                   <>
@@ -3684,26 +3764,53 @@ export default function App() {
                     />
 
                     {showEmojiPicker && (
-                      <div className="absolute bottom-full left-3 sm:left-5 mb-2 p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-8 gap-1 z-30">
-                        {COMPOSER_EMOJIS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => {
-                              handleDraftChange(`${draftText}${emoji}`);
-                              composerRef.current?.focus();
-                            }}
-                            className="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-lg cursor-pointer transition-transform active:scale-90"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
+                      <>
+                        <div
+                          className="fixed inset-0 z-20"
+                          onClick={() => setShowEmojiPicker(false)}
+                          aria-hidden="true"
+                        />
+                        <div className="absolute bottom-full left-3 sm:left-5 mb-2 p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-8 gap-1 z-30">
+                          {COMPOSER_EMOJIS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => {
+                                handleDraftChange(`${draftText}${emoji}`);
+                                composerRef.current?.focus();
+                              }}
+                              className="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-lg cursor-pointer transition-transform active:scale-90"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </>
                     )}
+
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => void handlePickPhoto(e)}
+                      className="hidden"
+                    />
+                    <input
+                      ref={fileAttachmentInputRef}
+                      type="file"
+                      accept=".pdf,.txt,.doc,.docx,.csv,.json,.zip,application/pdf,text/plain"
+                      onChange={(e) => void handlePickFile(e)}
+                      className="hidden"
+                    />
 
                     <button
                       type="button"
-                      onClick={() => setShowEmojiPicker((o) => !o)}
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        setShowMobileExtras(false);
+                        setShowEmojiPicker((o) => !o);
+                      }}
                       className={`min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors cursor-pointer shrink-0 ${
                         showEmojiPicker
                           ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400'
@@ -3715,187 +3822,147 @@ export default function App() {
                       <Smile className="w-5 h-5" />
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => photoInputRef.current?.click()}
-                      className="min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                      title="Share Photos (select up to 6)"
-                      aria-label="Share Photos"
-                    >
-                      <ImageIcon className="w-5 h-5" />
-                    </button>
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => void handlePickPhoto(e)}
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => setShowCameraModal(true)}
-                      className="min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                      title="Take Photo with Camera"
-                      aria-label="Take Photo with Camera"
-                    >
-                      <Camera className="w-5 h-5" />
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={sendingFile}
-                      onClick={() => fileAttachmentInputRef.current?.click()}
-                      className="hidden sm:flex min-w-[40px] min-h-[44px] items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors cursor-pointer shrink-0"
-                      title="Attach PDF or Document (max 320 KB)"
-                      aria-label="Attach PDF or Document"
-                    >
-                      <Paperclip className="w-5 h-5" />
-                    </button>
-                    <input
-                      ref={fileAttachmentInputRef}
-                      type="file"
-                      accept=".pdf,.txt,.doc,.docx,.csv,.json,.zip,application/pdf,text/plain"
-                      onChange={(e) => void handlePickFile(e)}
-                      className="hidden"
-                    />
-
-                    {!isActiveBotChat && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setShowMiniGameModal(true)}
-                          className="min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl sanvad-accent-text hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                          title="Play Chat Mini Games"
-                          aria-label="Play Chat Mini Games"
-                        >
-                          <Gamepad2 className="w-5 h-5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowPollModal(true)}
-                          className="hidden sm:flex min-w-[40px] min-h-[44px] items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                          title="Create Poll"
-                          aria-label="Create Poll"
-                        >
-                          <BarChart3 className="w-5 h-5" />
-                        </button>
-                      </>
-                    )}
-
-                    {activeMembers.length > 1 && !isActiveBotChat && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const needsSpace = draftText.length > 0 && !/\s$/.test(draftText);
-                          handleDraftChange(`${draftText}${needsSpace ? ' ' : ''}@`);
-                          composerRef.current?.focus();
-                        }}
-                        className="hidden md:flex min-w-[38px] min-h-[44px] items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                        title="Mention a friend (@)"
-                        aria-label="Mention a friend"
-                      >
-                        <AtSign className="w-4 h-4" />
-                      </button>
-                    )}
-
                     {showMobileExtras && (
-                      <div className="sm:hidden absolute bottom-full left-3 mb-2 p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-2 gap-1.5 z-30 min-w-[235px]">
-                        {!isActiveBotChat && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowMobileExtras(false);
-                                setShowMiniGameModal(true);
-                              }}
-                              className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
-                            >
-                              <Gamepad2 className="w-4 h-4 sanvad-accent-text" />
-                              <span>Mini Games</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowMobileExtras(false);
-                                setShowLeaderboardModal(true);
-                              }}
-                              className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
-                            >
-                              <Trophy className="w-4 h-4 text-amber-500" />
-                              <span>Leaderboard</span>
-                            </button>
-                          </>
-                        )}
-                        {activeChat.type === 'group' && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-20"
+                          onClick={() => setShowMobileExtras(false)}
+                          aria-hidden="true"
+                        />
+                        <div
+                          role="menu"
+                          aria-label="Chat attachments and tools"
+                          className="absolute bottom-full left-3 sm:left-5 mb-2 p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl grid grid-cols-2 gap-1.5 z-30 min-w-[260px]"
+                        >
                           <button
                             type="button"
                             onClick={() => {
                               setShowMobileExtras(false);
-                              setShowChecklistModal(true);
+                              photoInputRef.current?.click();
                             }}
                             className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
                           >
-                            <ListChecks className="w-4 h-4 sanvad-accent-text" />
-                            <span>Trip Checklist</span>
+                            <ImageIcon className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                            <span>Photos</span>
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          disabled={sendingFile}
-                          onClick={() => {
-                            setShowMobileExtras(false);
-                            fileAttachmentInputRef.current?.click();
-                          }}
-                          className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
-                        >
-                          <Paperclip className="w-4 h-4 text-slate-500" />
-                          <span>Attach File</span>
-                        </button>
-                        {!isActiveBotChat && (
-                          <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowMobileExtras(false);
+                              setShowCameraModal(true);
+                            }}
+                            className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
+                          >
+                            <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                            <span>Camera</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={sendingFile}
+                            onClick={() => {
+                              setShowMobileExtras(false);
+                              fileAttachmentInputRef.current?.click();
+                            }}
+                            className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
+                          >
+                            <Paperclip className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <span>Attach File</span>
+                          </button>
+                          {!isActiveBotChat && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowMobileExtras(false);
+                                  setShowMiniGameModal(true);
+                                }}
+                                className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
+                              >
+                                <Gamepad2 className="w-4 h-4 sanvad-accent-text shrink-0" />
+                                <span>Mini Games</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowMobileExtras(false);
+                                  setShowLeaderboardModal(true);
+                                }}
+                                className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
+                              >
+                                <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                                <span>Leaderboard</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowMobileExtras(false);
+                                  setShowPollModal(true);
+                                }}
+                                className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
+                              >
+                                <BarChart3 className="w-4 h-4 sanvad-accent-text shrink-0" />
+                                <span>Create Poll</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowMobileExtras(false);
+                                  setShowMeetModal(true);
+                                }}
+                                className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
+                              >
+                                <Video className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <span>Google Meet</span>
+                              </button>
+                            </>
+                          )}
+                          {activeChat.type === 'group' && (
                             <button
                               type="button"
                               onClick={() => {
                                 setShowMobileExtras(false);
-                                setShowPollModal(true);
+                                setShowChecklistModal(true);
                               }}
                               className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
                             >
-                              <BarChart3 className="w-4 h-4 sanvad-accent-text" />
-                              <span>Create Poll</span>
+                              <ListChecks className="w-4 h-4 sanvad-accent-text shrink-0" />
+                              <span className="truncate">Trip Checklist</span>
                             </button>
+                          )}
+                          {activeMembers.length > 1 && !isActiveBotChat && (
                             <button
                               type="button"
                               onClick={() => {
                                 setShowMobileExtras(false);
-                                setShowMeetModal(true);
+                                const needsSpace = draftText.length > 0 && !/\s$/.test(draftText);
+                                handleDraftChange(`${draftText}${needsSpace ? ' ' : ''}@`);
+                                composerRef.current?.focus();
                               }}
                               className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
                             >
-                              <Video className="w-4 h-4 text-emerald-600" />
-                              <span>Google Meet</span>
+                              <AtSign className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                              <span>Mention (@)</span>
                             </button>
-                          </>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      </>
                     )}
 
                     <button
                       type="button"
                       onClick={() => {
+                        setShowHeaderMenu(false);
                         setShowEmojiPicker(false);
                         setShowMobileExtras((v) => !v);
                       }}
-                      className={`sm:hidden min-w-[38px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors cursor-pointer shrink-0 ${
+                      className={`min-w-[40px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors cursor-pointer shrink-0 ${
                         showMobileExtras
                           ? 'bg-teal-50 dark:bg-teal-950/50 sanvad-accent-text'
                           : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
-                      title="More tools (File, Poll, Meet, AI)"
-                      aria-label="More composer tools"
+                      title="All tools (Photo, Camera, File, Games, Poll, Meet)"
+                      aria-label="Open composer tools"
+                      aria-expanded={showMobileExtras}
                     >
                       <Plus className={`w-5 h-5 transition-transform ${showMobileExtras ? 'rotate-45' : ''}`} />
                     </button>
@@ -3906,6 +3973,7 @@ export default function App() {
                       maxLength={LIMITS.MESSAGE_TEXT_MAX}
                       value={draftText}
                       onFocus={() => {
+                        setShowHeaderMenu(false);
                         setShowEmojiPicker(false);
                         setShowMobileExtras(false);
                       }}
