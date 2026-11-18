@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Dices, Flame, Gamepad2, HelpCircle, Send, Shuffle, Sparkles, Trophy, X } from 'lucide-react';
+import { Dices, Flame, Gamepad2, HelpCircle, History, Send, Shuffle, Sparkles, Trophy, X } from 'lucide-react';
 import { recordMiniGameResult } from '../services/chatService';
 import type { Chat, MiniGameType, PublicUser } from '../types/chat';
-import { GameLeaderboardPanel } from './GameLeaderboard';
+import { GameHistoryPanel, GameLeaderboardPanel } from './GameLeaderboard';
 
-type GameTab = 'tod' | 'challenge' | 'wyr' | 'lucky' | 'leaderboard';
+type GameTab = 'tod' | 'challenge' | 'wyr' | 'lucky' | 'leaderboard' | 'history';
 
 const TRUTHS = [
   'What is one funny secret nobody in this chat knows about you?',
@@ -311,21 +311,22 @@ export const MiniGameModal: React.FC<MiniGameModalProps> = ({
 
         {/* Game Switcher Tabs */}
         <div className="px-4 pt-3 shrink-0">
-          <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
+          <div className="grid grid-cols-6 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
             {(
               [
                 { id: 'tod', label: 'Truth/Dare' },
                 { id: 'challenge', label: 'Challenge' },
                 { id: 'wyr', label: 'Poll' },
-                { id: 'lucky', label: 'Dice/Spin' },
+                { id: 'lucky', label: 'Dice' },
                 { id: 'leaderboard', label: 'Ranks' },
+                { id: 'history', label: 'History' },
               ] as const
             ).map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
-                className={`min-h-[36px] px-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer inline-flex items-center justify-center gap-1 ${
+                className={`min-h-[36px] px-0.5 rounded-lg text-[10px] sm:text-[11px] font-semibold transition-colors cursor-pointer inline-flex items-center justify-center gap-0.5 ${
                   tab === item.id
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -333,6 +334,9 @@ export const MiniGameModal: React.FC<MiniGameModalProps> = ({
               >
                 {item.id === 'leaderboard' && (
                   <Trophy className="w-3 h-3 text-amber-500 shrink-0" />
+                )}
+                {item.id === 'history' && (
+                  <History className="w-3 h-3 text-teal-600 shrink-0" />
                 )}
                 <span>{item.label}</span>
               </button>
@@ -351,6 +355,12 @@ export const MiniGameModal: React.FC<MiniGameModalProps> = ({
                 await onSendMessage(summaryText, []);
                 onClose();
               }}
+            />
+          ) : tab === 'history' ? (
+            <GameHistoryPanel
+              chat={chat}
+              currentUid={currentUid}
+              members={members}
             />
           ) : (
             <>

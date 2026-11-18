@@ -4,6 +4,8 @@ import {
   Crown,
   Flame,
   Gamepad2,
+  History,
+  Loader2,
   Medal,
   Plus,
   Send,
@@ -531,6 +533,157 @@ export const GameLeaderboardModal: React.FC<GameLeaderboardModalProps> = ({
             }}
           />
         </div>
+      </div>
+    </div>
+  );
+};
+
+export const GameHistoryPanel: React.FC<{
+  chat: Chat;
+  currentUid: string;
+  members: PublicUser[];
+}> = ({ chat, currentUid, members }) => {
+  const [results, setResults] = useState<GameResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const isAdmin = chat.adminUids.includes(currentUid);
+
+  useEffect(() => {
+    setLoading(true);
+    const path = `chats/${chat.id}/game_results`;
+    const q = query(
+      collection(db, 'chats', chat.id, 'game_results'),
+      where('visibleToUids', 'array-contains', currentUid),
+      limit(250)
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => d.data() as GameResult);
+        list.sort(
+          (a, b) => (b.createdAt?.toMillis() ?? Date.now()) - (a.createdAt?.toMillis() ?? Date.now())
+        );
+        setResults(list);
+        setLoading(false);
+      },
+      (err) => {
+        setLoading(false);
+        handleFirestoreError(err, OperationType.LIST, path);
+      }
+    );
+    return () => unsub();
+  }, [chat.id, currentUid]);
+
+  const memberMap = useMemo(() => {
+    const map: Record<string, PublicUser> = {};
+    members.forEach((m) => {
+      map[m.uid] = m;
+    });
+    return map;
+  }, [members]);
+
+  if (loading) {
+    return (
+      <div className="py-12 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+      </div>
+    );
+  }
+
+  if (results.length === 0) {
+    return (
+      <div className="py-12 text-center space-y-2">
+        <History className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No game history yet</p>
+        <p className="text-xs text-slate-500">Play Truth or Dare, Challenges, or Dice games to see results here!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between pb-1">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Chronological Game Feed ({results.length})
+        </h4>
+      </div>
+      <div className="space-y-2 max-h-[60dvh] overflow-y-auto chat-scroll pr-1">
+        {results.map((item) => {
+          const user = memberMap[item.playerId] || {
+            displayName: item.playerName,
+            photoUrl: '',
+            handle: 'player',
+          };
+          const canDelete = item.recordedBy === currentUid || isAdmin;
+          const timeStr = item.createdAt ? item.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          const dateStr = item.createdAt ? item.createdAt.toDate().toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
+
+          const gameBadgeClass =
+            item.gameType === 'tod'
+              ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'
+              : item.gameType === 'challenge'
+              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+              : item.gameType === 'wyr'
+              ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400'
+              : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400';
+
+          const gameTypeName =
+            item.gameType === 'tod'
+              ? 'Truth or Dare'
+              : item.gameType === 'challenge'
+              ? 'Challenge'
+              : item.gameType === 'wyr'
+              ? 'Poll Game'
+              : 'Lucky Dice/Coin';
+
+          return (
+            <div
+              key={item.id}
+              className="p-3 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="shrink-0">
+                  <Avatar
+                    src={user.photoUrl}
+                    name={user.displayName}
+                    size="md"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      {user.displayName}
+                    </span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${gameBadgeClass}`}>
+                      {gameTypeName}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                    {item.summary}
+                  </p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                    {dateStr} at {timeStr}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-lg">
+                  +{item.points} pts
+                </span>
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={() => void deleteMiniGameResult(chat.id, item.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                    title="Delete history entry"
+                    aria-label="Delete history entry"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

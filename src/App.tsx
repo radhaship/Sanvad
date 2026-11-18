@@ -67,7 +67,6 @@ import { ChatInfoDrawer } from './components/ChatInfoDrawer';
 import { CreatePollModal } from './components/CreatePollModal';
 import { ForwardModal } from './components/ForwardModal';
 import { GameLeaderboardModal } from './components/GameLeaderboard';
-import { GeminiAssistantModal } from './components/GeminiAssistantModal';
 import { GoogleMeetModal } from './components/GoogleMeetModal';
 import { GroupChecklistModal } from './components/GroupChecklistModal';
 import { ImageLightbox } from './components/ImageLightbox';
@@ -98,6 +97,12 @@ import {
   OperationType,
   signInWithBasicGoogle,
 } from './lib/firebase';
+import {
+  decryptE2EEMessage,
+  encryptE2EEMessage,
+  getOrGenerateUserKeyPair,
+  getPeerPublicKey,
+} from './lib/e2e';
 import {
   askBaatCheetAI,
   BAATCHEET_AI_NAME,
@@ -268,11 +273,12 @@ export default function App() {
   const [showPollModal, setShowPollModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showInfoDrawer, setShowInfoDrawer] = useState(false);
-  const [showGeminiModal, setShowGeminiModal] = useState(false);
   const [showMeetModal, setShowMeetModal] = useState(false);
   const [showWallpaperModal, setShowWallpaperModal] = useState(false);
   const [showStarredModal, setShowStarredModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [decryptedCache, setDecryptedCache] = useState<Record<string, string>>({});
+  const e2eePrivateKeyRef = useRef<CryptoKey | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMobileExtras, setShowMobileExtras] = useState(false);
   const [forwardingMessage, setForwardingMessage] = useState<ChatMessage | null>(null);
@@ -409,7 +415,6 @@ export default function App() {
     if (showNewChat.open) return 'view=newchat';
     if (showProfileModal) return 'view=profile';
     if (showPollModal) return 'view=poll';
-    if (showGeminiModal) return 'view=gemini';
     if (showMeetModal) return 'view=meet';
     if (showWallpaperModal) return 'view=wallpaper';
     if (showStarredModal) return 'view=starred';
@@ -435,7 +440,6 @@ export default function App() {
     showNewChat.open,
     showProfileModal,
     showPollModal,
-    showGeminiModal,
     showMeetModal,
     showWallpaperModal,
     showStarredModal,
@@ -495,7 +499,6 @@ export default function App() {
       );
       setShowProfileModal((prev) => (!hash.includes('view=profile') && prev ? false : prev));
       setShowPollModal((prev) => (!hash.includes('view=poll') && prev ? false : prev));
-      setShowGeminiModal((prev) => (!hash.includes('view=gemini') && prev ? false : prev));
       setShowMeetModal((prev) => (!hash.includes('view=meet') && prev ? false : prev));
       setShowWallpaperModal((prev) => (!hash.includes('view=wallpaper') && prev ? false : prev));
       setShowStarredModal((prev) => (!hash.includes('view=starred') && prev ? false : prev));
@@ -575,6 +578,28 @@ export default function App() {
   }, []);
 
   const currentUid = currentUser?.uid ?? null;
+
+  // Initialize E2EE user keypair
+  useEffect(() => {
+    if (!currentUid) return;
+    void getOrGenerateUserKeyPair(currentUid).then((key) => {
+      e2eePrivateKeyRef.current = key;
+    });
+  }, [currentUid]);
+
+  // Decrypt incoming E2EE messages
+  useEffect(() => {
+    const privKey = e2eePrivateKeyRef.current;
+    if (!privKey) return;
+    messages.forEach((msg) => {
+      if (msg.text.startsWith('ENC:') && !decryptedCache[msg.id]) {
+        void decryptE2EEMessage(msg.text, privKey).then((decrypted) => {
+          setDecryptedCache((prev) => ({ ...prev, [msg.id]: decrypted }));
+        });
+      }
+    });
+  }, [messages, decryptedCache]);
+
   const readReceiptsEnabled = currentUser?.readReceiptsEnabled !== false;
   const readReceiptsEnabledRef = useRef<boolean>(readReceiptsEnabled);
   readReceiptsEnabledRef.current = readReceiptsEnabled;
@@ -1823,7 +1848,32 @@ export default function App() {
     }
 
     try {
-      await sendTextMessage(activeChat, currentUser, text, mentionedUids, replySnapshot);
+      let finalMessageText = text;
+      if (activeChat.type === 'direct' && !isBaatCheetAIChat(activeChat)) {
+        const peerUid = activeChat.memberUids.find((u) => u !== currentUid);
+        if (peerUid) {
+          try {
+            const peerPub = await getPeerPublicKey(peerUid);
+            const rawOwnPub = localStorage.getItem(`sanvad_e2e_pub_jwk_${currentUser.uid}`);
+            const ownPub = rawOwnPub
+              ? await window.crypto.subtle.importKey(
+                  'jwk',
+                  JSON.parse(rawOwnPub),
+                  { name: 'RSA-OAEP', hash: 'SHA-256' },
+                  true,
+                  ['encrypt']
+                )
+              : null;
+            const pubs = [peerPub, ownPub].filter(Boolean) as CryptoKey[];
+            if (pubs.length > 0) {
+              finalMessageText = await encryptE2EEMessage(text, pubs);
+            }
+          } catch (e2eeErr) {
+            console.error('E2EE encryption failed, sending plaintext:', e2eeErr);
+          }
+        }
+      }
+      await sendTextMessage(activeChat, currentUser, finalMessageText, mentionedUids, replySnapshot);
       playSendMessageSound();
       if (isBaatCheetAIChat(activeChat)) {
         void triggerBotReply(activeChat, text);
@@ -2227,16 +2277,6 @@ export default function App() {
           </button>
 
           <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowGeminiModal(true)}
-              className="min-w-[36px] min-h-[38px] px-1.5 flex items-center justify-center gap-1 rounded-xl text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/50 transition-colors cursor-pointer"
-              title="Talk with Gemini AI"
-              aria-label="Talk with Gemini AI"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden lg:inline text-xs font-semibold">Gemini</span>
-            </button>
             <button
               type="button"
               onClick={() => setShowStarredModal(true)}
@@ -2649,7 +2689,7 @@ export default function App() {
                     No conversations yet
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Start a personal chat, create a group, or talk with Gemini AI.
+                    Start a personal chat or create a group with your friends.
                   </p>
                   <div className="pt-2 flex flex-wrap justify-center gap-2">
                     <button
@@ -2658,14 +2698,6 @@ export default function App() {
                       className="min-h-[40px] px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold cursor-pointer"
                     >
                       New Chat
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowGeminiModal(true)}
-                      className="min-h-[40px] px-4 rounded-xl border border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 text-xs font-semibold hover:bg-teal-50 dark:hover:bg-teal-950/40 inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Gemini AI</span>
                     </button>
                   </div>
                 </>
@@ -2967,7 +2999,7 @@ export default function App() {
                   Welcome to Sanvad, {currentUser.displayName}
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Message friends, start Google Meet calls, talk with Gemini AI, share photos,
+                  Message friends, start Google Meet calls, share photos,
                   customize wallpapers, and vote on live polls.
                 </p>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/50 border border-teal-200/60 dark:border-teal-800/60 text-xs font-medium text-teal-800 dark:text-teal-200">
@@ -2992,14 +3024,6 @@ export default function App() {
                   className="min-h-[42px] px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-semibold cursor-pointer"
                 >
                   Create Group
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowGeminiModal(true)}
-                  className="min-h-[42px] px-4 py-2 rounded-xl bg-gradient-to-r from-teal-700 to-sky-700 hover:opacity-95 text-white text-sm font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Talk to Gemini AI</span>
                 </button>
                 <button
                   type="button"
@@ -3230,18 +3254,6 @@ export default function App() {
                 >
                   <Search className="w-4 h-4" />
                 </button>
-                {!isActiveBotChat && (
-                  <button
-                    type="button"
-                    onClick={() => setShowGeminiModal(true)}
-                    className="hidden sm:inline-flex min-w-[38px] min-h-[38px] px-2 rounded-xl text-xs font-semibold text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 items-center justify-center gap-1.5 cursor-pointer"
-                    title="Ask Gemini AI"
-                    aria-label="Ask Gemini AI"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span className="hidden lg:inline">Gemini</span>
-                  </button>
-                )}
                 {!isActiveBotChat && (
                   <button
                     type="button"
@@ -3476,7 +3488,10 @@ export default function App() {
                         </div>
                       )}
                       <MessageBubble
-                        message={msg}
+                        message={{
+                          ...msg,
+                          text: decryptedCache[msg.id] || (msg.text.startsWith('ENC:') ? '🔒 [Encrypted Message]' : msg.text),
+                        }}
                         chat={activeChat}
                         currentUid={currentUser.uid}
                         currentUserName={currentUser.displayName}
@@ -3863,17 +3878,6 @@ export default function App() {
                               <Video className="w-4 h-4 text-emerald-600" />
                               <span>Google Meet</span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowMobileExtras(false);
-                                setShowGeminiModal(true);
-                              }}
-                              className="min-h-[42px] px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-2 text-slate-700 dark:text-slate-200 cursor-pointer"
-                            >
-                              <Sparkles className="w-4 h-4 text-sky-600" />
-                              <span>Gemini AI</span>
-                            </button>
                           </>
                         )}
                       </div>
@@ -4207,22 +4211,6 @@ export default function App() {
           onImageClick={(url, caption) => setLightboxImage({ url, caption, viewOnce: false })}
           onLeftGroup={() => setActiveChatId(null)}
           onClose={() => setShowInfoDrawer(false)}
-        />
-      )}
-
-      {showGeminiModal && (
-        <GeminiAssistantModal
-          userName={currentUser.displayName}
-          hasActiveChat={Boolean(activeChat)}
-          onSendToActiveChat={
-            activeChat
-              ? async (txt) => {
-                  const mentioned = extractMentionedUids(txt, activeMembers);
-                  await sendTextMessage(activeChat, currentUser, txt, mentioned);
-                }
-              : undefined
-          }
-          onClose={() => setShowGeminiModal(false)}
         />
       )}
 

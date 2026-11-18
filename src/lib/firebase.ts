@@ -65,6 +65,8 @@ export async function signInWithGoogleForApp(): Promise<{
   return { credentialResult: result, accessToken: cachedAccessToken };
 }
 
+export const FIREBASE_PROJECT_ID = typedConfig.projectId;
+
 export function formatAuthError(error: unknown): string {
   const code =
     typeof error === 'object' && error !== null && 'code' in error
@@ -85,7 +87,10 @@ export function formatAuthError(error: unknown): string {
     return 'Network error while connecting to Google Sign-In. Please check your connection and try again.';
   }
   if (code === 'auth/unauthorized-domain' || message.includes('auth/unauthorized-domain')) {
-    return 'This app domain is not authorized in Firebase Authentication. Try opening the official preview/app link.';
+    const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+    return currentHost
+      ? `Domain "${currentHost}" is not authorized in Firebase Authentication yet. Add it under Authentication → Settings → Authorized domains.`
+      : 'This app domain is not authorized in Firebase Authentication. Add this domain under Authentication → Settings → Authorized domains.';
   }
   return message || 'Google Sign-In failed. Please try again.';
 }

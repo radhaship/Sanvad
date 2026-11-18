@@ -128,7 +128,7 @@ service cloud.firestore {
           'pinnedChatIds', 'archivedChatIds', 'wallpaper', 'chatWallpapers', 'readReceiptsEnabled',
           'accentColor', 'fontSize',
           'mutedChatIds', 'blockedUids', 'deletedChats',
-          'fcmTokens', 'fcmTokenUpdatedAt',
+          'fcmTokens', 'fcmTokenUpdatedAt', 'publicKey',
           'createdAt', 'updatedAt'
         ]) &&
         data.uid is string && data.uid == userId &&
@@ -150,6 +150,7 @@ service cloud.firestore {
         (!('deletedChats' in data) || (data.deletedChats is map && data.deletedChats.size() <= 100)) &&
         (!('fcmTokens' in data) || isValidFcmTokens(data.fcmTokens)) &&
         (!('fcmTokenUpdatedAt' in data) || data.fcmTokenUpdatedAt is timestamp) &&
+        (!('publicKey' in data) || (data.publicKey is string && data.publicKey.size() <= 2000)) &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
     }
@@ -159,7 +160,7 @@ service cloud.firestore {
           'uid', 'displayName', 'handle', 'photoUrl', 'bio', 'isOnline', 'discoverable', 'lastSeen', 'updatedAt'
         ]) &&
         data.keys().hasOnly([
-          'uid', 'displayName', 'handle', 'photoUrl', 'bio', 'isOnline', 'discoverable', 'lastSeen', 'updatedAt'
+          'uid', 'displayName', 'handle', 'photoUrl', 'bio', 'isOnline', 'discoverable', 'lastSeen', 'updatedAt', 'publicKey'
         ]) &&
         data.uid is string && data.uid == userId &&
         data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 50 &&
@@ -168,6 +169,7 @@ service cloud.firestore {
         data.bio is string && data.bio.size() <= 160 &&
         data.isOnline is bool &&
         data.discoverable is bool &&
+        (!('publicKey' in data) || (data.publicKey is string && data.publicKey.size() <= 2000)) &&
         data.lastSeen is timestamp &&
         data.updatedAt is timestamp;
     }
@@ -456,7 +458,7 @@ service cloud.firestore {
           'displayName', 'handle', 'photoUrl', 'bio', 'discoverable',
           'pinnedChatIds', 'archivedChatIds', 'mutedChatIds', 'blockedUids', 'deletedChats',
           'wallpaper', 'chatWallpapers', 'readReceiptsEnabled',
-          'accentColor', 'fontSize', 'fcmTokens', 'fcmTokenUpdatedAt', 'updatedAt'
+          'accentColor', 'fontSize', 'fcmTokens', 'fcmTokenUpdatedAt', 'publicKey', 'updatedAt'
         ]);
       allow delete: if false;
 
@@ -553,7 +555,7 @@ service cloud.firestore {
           (
             incoming().lastSeen == request.time &&
             incoming().diff(existing()).affectedKeys().hasOnly([
-              'displayName', 'handle', 'photoUrl', 'bio', 'discoverable', 'isOnline', 'lastSeen', 'updatedAt'
+              'displayName', 'handle', 'photoUrl', 'bio', 'discoverable', 'isOnline', 'publicKey', 'lastSeen', 'updatedAt'
             ])
           )
         );
