@@ -1782,10 +1782,21 @@ export default function App() {
       if (!finalPrompt) return;
 
       const lastTurn = priorTurns[priorTurns.length - 1];
-      const history =
+      const rawHistory =
         lastTurn && lastTurn.role === 'user' && lastTurn.text === finalPrompt
           ? priorTurns
           : [...priorTurns, { role: 'user' as const, text: finalPrompt }];
+
+      const history: Array<{ role: 'user' | 'model'; text: string }> = [];
+      for (const turn of rawHistory) {
+        if (history.length === 0 && turn.role !== 'user') continue;
+        const prev = history[history.length - 1];
+        if (prev && prev.role === turn.role) {
+          prev.text = `${prev.text}\n\n${turn.text}`.slice(0, 4000);
+        } else {
+          history.push({ role: turn.role, text: turn.text });
+        }
+      }
 
       setAiThinkingChats((prev) => ({ ...prev, [targetChat.id]: true }));
       playTypingStartedSound();

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import express from 'express';
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
@@ -40,69 +40,20 @@ function getGeminiClient(): GoogleGenAI {
   });
 }
 
-function getSmartFallbackReply(prompt: string, userName: string): string {
-  const lower = prompt.toLowerCase();
-  const name = userName ? userName : 'ji';
-
-  if (lower.includes('trip') || lower.includes('travel') || lower.includes('goa') || lower.includes('tour')) {
-    return `Hey **${name}**! Yeh raha aapke liye ek shandar weekend trip plan:
-
-### 🌴 3-Day Quick Itinerary
-- **Day 1:** Arrival, check-in, aur sunset beach walk
-- **Day 2:** Local sightseeing, water/adventure sports, aur group dinner
-- **Day 3:** Morning shopping, photos, aur return journey
-
-> **Group Poll Idea:** Beach Resort vs Mountain Villa vs Heritage Stay?`;
+function normalizeTurnsForGemini(turns: ChatTurn[]): ChatTurn[] {
+  const merged: ChatTurn[] = [];
+  for (const turn of turns) {
+    if (merged.length === 0 && turn.role !== 'user') {
+      continue;
+    }
+    const prev = merged[merged.length - 1];
+    if (prev && prev.role === turn.role) {
+      prev.text = `${prev.text}\n\n${turn.text}`.slice(0, 4000);
+    } else {
+      merged.push({ role: turn.role, text: turn.text.trim().slice(0, 4000) });
+    }
   }
-  if (lower.includes('joke') || lower.includes('funny') || lower.includes('hasao') || lower.includes('hasane')) {
-    return `Sunie **${name}** ek mast joke 😂
-
-**Teacher:** "Agar aam ke ped par 10 aam hain aur tumne 3 tod liye, toh kitne bachenge?"  
-**Student:** "Sir, aam toh **7** bachenge, lekin mali ke dande **100%** padenge!"`;
-  }
-  if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey') || lower.includes('namaste')) {
-    return `Namaste **${name}**! 👋 Main **BaatCheet AI** hoon.
-
-Main aapki in cheezon me madad kar sakta hoon:
-- Trip planning aur group ideas
-- Messages, emails ya shayari draft karna
-- Coding, study ya daily questions solve karna
-
-Bataiye, aaj kis topic par baat karein?`;
-  }
-  if (lower.includes('message') || lower.includes('shayari') || lower.includes('quote') || lower.includes('status')) {
-    return `Yeh lijiye ek behtareen line aapke doston ke liye ✨
-
-> *"Dosti wo nahi jo jaan deti hai, dosti wo bhi nahi jo muskaan deti hai...  
-> Asli dosti toh wo hai jo bheed me bhi aapki khamoshi pehchan leti hai!"*`;
-  }
-  if (lower.includes('food') || lower.includes('dinner') || lower.includes('khaana') || lower.includes('restaurant') || lower.includes('lunch')) {
-    return `Dinner plan ke liye **4 best options**, ${name}:
-
-1. 🍕 **Wood-Fired Pizza & Pasta** — Sabka all-time favourite
-2. 🥘 **North Indian Thali** — Dal Makhani, Paneer & Butter Naan
-3. 🍜 **Desi Chinese** — Hakka Noodles & Chilli Paneer
-4. 🍔 **Burgers & Loaded Fries** — Quick hangout combo
-
-Aapka group kaunsa choose karega?`;
-  }
-  if (lower.includes('code') || lower.includes('python') || lower.includes('javascript') || lower.includes('react')) {
-    return `Bilkul **${name}**! Yeh raha ek clean example:
-
-\`\`\`javascript
-function greetFriend(name) {
-  return \`Namaste \${name}, BaatCheet me swagat hai!\`;
-}
-
-console.log(greetFriend("${name}"));
-\`\`\`
-
-Koi specific language ya bug solve karwana hai toh code paste kar dijiye!`;
-  }
-
-  return `Bahut accha sawal hai, **${name}**!
-
-Main abhi offline/fallback mode me hoon kyunki **GEMINI_API_KEY** configured nahi hai — lekin aap mujhse trip plans, jokes, food ideas, ya general templates pooch sakte hain. Full live **Gemini AI** answers ke liye app ke **Settings > Secrets** me apni \`GEMINI_API_KEY\` add karein.`;
+  return merged;
 }
 
 async function startServer() {
@@ -119,8 +70,6 @@ async function startServer() {
   });
 
   app.post('/api/gemini/chat', async (req: Request, res: Response) => {
-    let userName = '';
-    let lastUserText = '';
     try {
       const body = req.body as {
         messages?: ChatTurn[];
@@ -130,20 +79,30 @@ async function startServer() {
         imageData?: string;
       };
 
-      userName = typeof body?.userName === 'string' ? body.userName.trim().slice(0, 50) : '';
+      const userName = typeof body?.userName === 'string' ? body.userName.trim().slice(0, 50) : '';
       const rawMessages = Array.isArray(body?.messages) ? body.messages : [];
-      const sanitizedTurns = rawMessages
-        .filter(
-          (m): m is ChatTurn =>
-            Boolean(m) &&
-            (m.role === 'user' || m.role === 'model') &&
-            typeof m.text === 'string' &&
-            m.text.trim().length > 0
-        )
-        .slice(-16);
+      const sanitizedTurns = normalizeTurnsForGemini(
+        rawMessages
+          .filter(
+            (m): m is ChatTurn =>
+              Boolean(m) &&
+              (m.role === 'user' || m.role === 'model') &&
+              typeof m.text === 'string' &&
+              m.text.trim().length > 0
+          )
+          .slice(-16)
+      );
 
       if (sanitizedTurns.length === 0 && typeof body?.imageData !== 'string') {
         res.status(400).json({ error: 'Message cannot be empty.' });
+        return;
+      }
+
+      if (!process.env.GEMINI_API_KEY) {
+        res.status(503).json({
+          error:
+            'Gemini API key is not configured on the server. Add GEMINI_API_KEY in Settings > Secrets.',
+        });
         return;
       }
 
@@ -152,12 +111,14 @@ async function startServer() {
         parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }>;
       }> = sanitizedTurns.map((m) => ({
         role: m.role,
-        parts: [{ text: m.text.trim().slice(0, 4000) }],
+        parts: [{ text: m.text }],
       }));
 
       // Attach optional image to the latest user turn for multimodal Q&A
       if (typeof body?.imageData === 'string' && body.imageData.startsWith('data:image/')) {
-        const match = body.imageData.match(/^data:(image\/(?:png|jpeg|jpg|webp|gif));base64,([A-Za-z0-9+/=]+)$/i);
+        const match = body.imageData.match(
+          /^data:(image\/(?:png|jpeg|jpg|webp|gif));base64,([A-Za-z0-9+/=]+)$/i
+        );
         if (match && match[2].length <= 600_000) {
           const imagePart = {
             inlineData: {
@@ -175,14 +136,6 @@ async function startServer() {
             });
           }
         }
-      }
-
-      lastUserText =
-        sanitizedTurns[sanitizedTurns.length - 1]?.text.trim() || 'Analyze this image';
-
-      if (!process.env.GEMINI_API_KEY) {
-        res.json({ reply: getSmartFallbackReply(lastUserText, userName) });
-        return;
       }
 
       const ai = getGeminiClient();
@@ -206,6 +159,9 @@ async function startServer() {
         contents,
         config: {
           systemInstruction,
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.LOW,
+          },
         },
       });
 
@@ -216,9 +172,34 @@ async function startServer() {
       }
 
       res.json({ reply });
-    } catch (_error) {
-      const reply = getSmartFallbackReply(lastUserText, userName);
-      res.json({ reply });
+    } catch (error) {
+      const errObj = error as { status?: number; message?: string };
+      const status = typeof errObj?.status === 'number' && errObj.status >= 400 ? errObj.status : 502;
+      const rawMsg = errObj?.message || 'AI service could not respond right now.';
+      console.error(`Gemini chat error (${status}):`, rawMsg.slice(0, 200));
+
+      if (status === 403 || rawMsg.includes('API_KEY_INVALID') || rawMsg.includes('PERMISSION_DENIED')) {
+        res.status(403).json({
+          error: 'Gemini API key is invalid or missing permissions. Check GEMINI_API_KEY in Settings > Secrets.',
+        });
+        return;
+      }
+      if (status === 429 || rawMsg.includes('RESOURCE_EXHAUSTED')) {
+        res.status(429).json({
+          error: 'Gemini AI rate limit reached. Please wait a moment and try again.',
+        });
+        return;
+      }
+      const safeDetail = rawMsg
+        .replace(/AIza[0-9A-Za-z\-_]+/g, '[redacted]')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 180);
+      res.status(status).json({
+        error: safeDetail
+          ? `BaatCheet AI error (${status}): ${safeDetail}`
+          : 'BaatCheet AI could not respond right now. Please try again.',
+      });
     }
   });
 

@@ -83,6 +83,13 @@ export async function askBaatCheetAI(params: {
     }),
   });
 
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(
+      'BaatCheet AI backend (/api/gemini/chat) is unavailable on static hosting. Deploy with Netlify Functions or Node server and set GEMINI_API_KEY.'
+    );
+  }
+
   const data = (await res.json().catch(() => ({}))) as { reply?: string; error?: string };
   if (!res.ok) {
     throw new Error(data.error || 'BaatCheet AI could not respond right now. Please try again.');
